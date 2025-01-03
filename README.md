@@ -12,7 +12,9 @@ Enhance your VoIP/SIP server security with automated threat blocking using APIBa
 
 </div>
 **Note**: Install CrowdSec from their official source, enroll your engine, and set up a bouncer before proceeding.
+
 ---
+
 
 ## 📚 Why This Guide?
 While open-source VoIP/SIP servers like FreePBX, FusionPBX, and Asterisk are powerful and widely used, comprehensive security guides for these platforms are surprisingly scarce. Most available resources either:
