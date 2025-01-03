@@ -131,11 +131,11 @@ cat /etc/crowdsec/local_api_credentials.yaml
 #!/bin/bash
 
 # Define the CrowdSec CLI login (use the correct user or system privileges)
-LOGIN=""  # Replace with your CrowdSec login (if necess>
-PASSWORD=""  # Replace with your passwo>
+LOGIN=""  # Replace with your CrowdSec login (if necessary)
+PASSWORD=""  # Replace with your password/API key
 
 # Fetch IPs from iptables that were blocked with 'reject-with icmp-port-unreachable'
-blocked_ips=$(sudo iptables -L -n -v | grep 'reject-with icmp-port-unreachable' | awk '{print $8}' | so>
+blocked_ips=$(sudo iptables -L -n -v | grep 'reject-with icmp-port-unreachable' | awk '{print $8}' | sort -u)
 
 # Check if any IPs were found
 if [ -z "$blocked_ips" ]; then
@@ -162,6 +162,7 @@ for ip in $blocked_ips; do
     echo "Failed to add IP $ip to CrowdSec decision list."
   fi
 done
+
 ```
 
 Save this script as `/usr/local/bin/apiban2crowdsec.sh` and make it executable:
