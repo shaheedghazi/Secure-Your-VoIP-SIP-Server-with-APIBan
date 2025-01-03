@@ -134,7 +134,44 @@ Once the system is set up, follow these steps to ensure continuous protection:
    Downloaded X new IPs
    Updated iptables with Y new entries
    ```
+## Extra security
+```
+#!/bin/bash
 
+# Define the CrowdSec CLI login (use the correct user or system privileges)
+LOGIN="924bf6c65e6085b2626a6d1c67782651vxHJat0uAA73LQlL"  # Replace with your CrowdSec login (if necessary)
+PASSWORD="GjBwgiFGPFmovBaRAxL947DJNqSEkD4tePPpqlySYrfpfe1Aqf1hyoClR0eQbtnS"  # Replace with your password/API key from the credentials file
+
+# Fetch IPs from iptables that were blocked with 'reject-with icmp-port-unreachable'
+blocked_ips=$(sudo iptables -L -n -v | grep 'reject-with icmp-port-unreachable' | awk '{print $8}' | sort -u)
+
+# Check if any IPs were found
+if [ -z "$blocked_ips" ]; then
+  echo "No blocked IPs found."
+  exit 1
+fi
+
+# Loop through each blocked IP and add it to CrowdSec's decision list
+for ip in $blocked_ips; do
+  # Skip invalid IPs (e.g., 0.0.0.0, 255.255.255.255)
+  if [[ "$ip" == "0.0.0.0" || "$ip" == "255.255.255.255" ]]; then
+    echo "Skipping invalid IP: $ip"
+    continue
+  fi
+
+  echo "Blocking IP: $ip"
+
+  # Call CrowdSec CLI to add the IP to the decision list (ban for 1 hour)
+  sudo cscli decisions add --ip "$ip" --duration 1h --reason "Blocked by iptables (APIBan)"
+
+  if [ $? -eq 0 ]; then
+    echo "Successfully added IP $ip to CrowdSec decision list."
+  else
+    echo "Failed to add IP $ip to CrowdSec decision list."
+  fi
+done
+
+```
 ## Optional: Email Alerts
 To be notified of issues such as client failures or missing IP blocks, consider setting up email alerts based on log file monitoring or the cron job status.
 
