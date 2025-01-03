@@ -131,8 +131,8 @@ cat /etc/crowdsec/local_api_credentials.yaml
 #!/bin/bash
 
 # Define the CrowdSec CLI login (use the correct user or system privileges)
-LOGIN="2222"  # Replace with your CrowdSec login (if necess>
-PASSWORD="2222"  # Replace with your passwo>
+LOGIN=""  # Replace with your CrowdSec login (if necess>
+PASSWORD=""  # Replace with your passwo>
 
 # Fetch IPs from iptables that were blocked with 'reject-with icmp-port-unreachable'
 blocked_ips=$(sudo iptables -L -n -v | grep 'reject-with icmp-port-unreachable' | awk '{print $8}' | so>
@@ -172,7 +172,7 @@ sudo chmod +x /usr/local/bin/apiban2crowdsec.sh
 Add a cron job to run the script every 15 minutes:
 ```bash
 # Add to root's crontab (sudo crontab -e)
-*/15 * * * * /usr/local/bin/apiban2crowdsec.sh >> /var/log/apiban-crowdsec.log 2>&1
+0 0 * * * /usr/local/bin/apiban2crowdsec.sh >> /var/log/apiban-crowdsec.log 2>&1
 ```
 
 ## 📊 Monitoring and Maintenance
