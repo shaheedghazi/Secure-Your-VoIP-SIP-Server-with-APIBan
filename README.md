@@ -123,6 +123,10 @@ Add to root's crontab (`sudo crontab -e`):
 
 ## 🛡️ Enhanced Security with CrowdSec
 Create a script to sync blocked IPs with CrowdSec (`nano api2crowdsec.sh`):
+get your creds by running
+```
+cat /etc/crowdsec/local_api_credentials.yaml
+```
 ```bash
 #!/bin/bash
 
