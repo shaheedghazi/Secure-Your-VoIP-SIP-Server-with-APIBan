@@ -168,6 +168,7 @@ done
 Save this script as `/usr/local/bin/apiban2crowdsec.sh` and make it executable:
 ```bash
 sudo chmod +x /usr/local/bin/apiban2crowdsec.sh
+sudo bash /usr/local/bin/apiban2crowdsec.sh
 ```
 
 Add a cron job to run the script every 15 minutes:
