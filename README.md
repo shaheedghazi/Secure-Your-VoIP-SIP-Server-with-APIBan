@@ -11,7 +11,7 @@ Enhance your VoIP/SIP server security with automated threat blocking using APIBa
 **Author**: Shaheed | **Last Updated**: 2024
 
 </div>
-
+**Note**: Install CrowdSec from their official source, enroll your engine, and set up a bouncer before proceeding.
 ---
 
 ## 📚 Why This Guide?
