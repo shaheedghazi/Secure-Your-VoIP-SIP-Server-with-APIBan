@@ -118,7 +118,7 @@ sudo iptables -L -n
 ### 5. Automate with Cron
 Add to root's crontab (`sudo crontab -e`):
 ```bash
-*/5 * * * * /usr/local/bin/apiban-iptables --config /etc/apiban/apiban-iptables.conf >> /var/log/apiban-client.log 2>&1
+0 0 * * * /usr/local/bin/apiban-iptables --config /etc/apiban/apiban-iptables.conf >> /var/log/apiban-client.log 2>&1
 ```
 
 ## 🛡️ Enhanced Security with CrowdSec
