@@ -73,32 +73,19 @@ APIBan helps mitigate these risks by maintaining a dynamic blocklist of known ma
 - Root/sudo access
 - APIBan API key ([Get your key here](https://www.apiban.org/getkey.html))
 - iptables installed and configured
-- Minimum system requirements:
-  - RAM: 512MB (1GB recommended)
-  - CPU: 1 core
-  - Storage: 100MB free space
 
 ## 📥 Installation Steps
 
 ### 1. Install APIBan Client
 ```bash
-# Download the latest APIBan client
 wget https://github.com/apiban/apiban-client-go/releases/download/v1.0.0/apiban-iptables-client
-
-# Make executable and move to system path
 chmod +x apiban-iptables-client
 sudo mv apiban-iptables-client /usr/local/bin/apiban-iptables
-
-# Verify installation
-apiban-iptables --version
 ```
 
 ### 2. Configure APIBan
 ```bash
-# Create configuration directory
 sudo mkdir -p /etc/apiban
-
-# Create and edit configuration file
 sudo nano /etc/apiban/apiban-iptables.conf
 ```
 
@@ -106,53 +93,30 @@ Add the following configuration:
 ```json
 {
     "apikey": "YOUR_API_KEY",  // Replace with your actual API key from APIBan
-    "lkid": "100",             // List ID for tracking last known blocked IPs
-    "version": "1.0",          // API version (current stable)
-    "set": "sip",              // IP set name for iptables
-    "flush": "200",            // Number of IPs to remove in each flush operation
-    "debug": false,            // Enable for troubleshooting
-    "ipv6": false             // Enable for IPv6 support
+    "lkid": "100",             // The list ID provided by APIBan, adjust based on your needs
+    "version": "1.0",          // API version (leave as is if using APIBan v1.0)
+    "set": "sip",              // The type of IP set to be used for blocking, e.g., "sip"
+    "flush": "200"             // Number of IPs to flush or remove (adjust as needed)
 }
 ```
 
 ### 3. Set Up Logging
 ```bash
-# Create log file with appropriate permissions
 sudo touch /var/log/apiban-client.log
 sudo chmod 644 /var/log/apiban-client.log
-
-# Optional: Configure log rotation
-sudo tee /etc/logrotate.d/apiban << EOF
-/var/log/apiban-client.log {
-    weekly
-    rotate 4
-    compress
-    missingok
-    notifempty
-}
-EOF
 ```
 
 ### 4. Test the Installation
 ```bash
-# Run APIBan manually
 apiban-iptables --config /etc/apiban/apiban-iptables.conf
-
-# Check logs
 tail -f /var/log/apiban-client.log
-
-# Verify iptables rules
-sudo iptables -L -n | grep "sip"
+sudo iptables -L -n
 ```
 
 ### 5. Automate with Cron
 Add to root's crontab (`sudo crontab -e`):
 ```bash
-# Update APIBan blocklist every 5 minutes
 */5 * * * * /usr/local/bin/apiban-iptables --config /etc/apiban/apiban-iptables.conf >> /var/log/apiban-client.log 2>&1
-
-# Optional: Daily cleanup of old blocks (adjust retention period as needed)
-0 0 * * * /usr/local/bin/apiban-iptables --flush >> /var/log/apiban-client.log 2>&1
 ```
 
 ## 🛡️ Enhanced Security with CrowdSec
@@ -161,53 +125,49 @@ Create a script to sync blocked IPs with CrowdSec:
 ```bash
 #!/bin/bash
 
-# Configuration
-CROWDSEC_LOGIN="your_crowdsec_login"
-CROWDSEC_KEY="your_crowdsec_api_key"
-LOG_FILE="/var/log/apiban-crowdsec.log"
-BLOCK_DURATION="24h"  # Adjust block duration as needed
+# Define the CrowdSec CLI login (use the correct user or system privileges)
+LOGIN="924bf6c65e6085bCrowdSeclogin "  # Replace with your CrowdSec login (if necessary)
+PASSWORD="password/API ke"  # Replace with your password/API key from the credentials file
 
-# Logging function
-log() {
-    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOG_FILE"
-}
-
-# Get blocked IPs from iptables
-log "Starting APIBan to CrowdSec sync"
+# Fetch IPs from iptables that were blocked with 'reject-with icmp-port-unreachable'
 blocked_ips=$(sudo iptables -L -n -v | grep 'reject-with icmp-port-unreachable' | awk '{print $8}' | sort -u)
 
-# Exit if no IPs found
+# Check if any IPs were found
 if [ -z "$blocked_ips" ]; then
-    log "No blocked IPs found"
-    exit 1
+  echo "No blocked IPs found."
+  exit 1
 fi
 
-# Add IPs to CrowdSec
+# Loop through each blocked IP and add it to CrowdSec's decision list
 for ip in $blocked_ips; do
-    # Skip invalid IPs
-    if [[ "$ip" =~ ^(0\.0\.0\.0|255\.255\.255\.255)$ ]]; then
-        log "Skipping invalid IP: $ip"
-        continue
-    fi
-    
-    log "Processing IP: $ip"
-    if sudo cscli decisions add --ip "$ip" --duration "$BLOCK_DURATION" --reason "APIBan Block" > /dev/null 2>&1; then
-        log "Successfully blocked IP: $ip"
-    else
-        log "Failed to block IP: $ip"
-    fi
-done
+  # Skip invalid IPs (e.g., 0.0.0.0, 255.255.255.255)
+  if [[ "$ip" == "0.0.0.0" || "$ip" == "255.255.255.255" ]]; then
+    echo "Skipping invalid IP: $ip"
+    continue
+  fi
 
-log "Sync completed"
+  echo "Blocking IP: $ip"
+
+  # Call CrowdSec CLI to add the IP to the decision list (ban for 1 hour)
+  sudo cscli decisions add --ip "$ip" --duration 1h --reason "Blocked by iptables (APIBan)"
+
+  if [ $? -eq 0 ]; then
+    echo "Successfully added IP $ip to CrowdSec decision list."
+  else
+    echo "Failed to add IP $ip to CrowdSec decision list."
+  fi
+done
 ```
 
-Save as `/usr/local/bin/apiban2crowdsec.sh` and configure:
+Save this script as `/usr/local/bin/apiban2crowdsec.sh` and make it executable:
 ```bash
-# Make executable
 sudo chmod +x /usr/local/bin/apiban2crowdsec.sh
+```
 
-# Add to crontab (runs every 15 minutes)
-*/15 * * * * /usr/local/bin/apiban2crowdsec.sh
+Add a cron job to run the script every 15 minutes:
+```bash
+# Add to root's crontab (sudo crontab -e)
+*/15 * * * * /usr/local/bin/apiban2crowdsec.sh >> /var/log/apiban-crowdsec.log 2>&1
 ```
 
 ## 📊 Monitoring and Maintenance
@@ -219,95 +179,28 @@ sudo iptables -L -n
 
 # Monitor logs
 tail -f /var/log/apiban-client.log
-
-# Check CrowdSec decisions
-sudo cscli decisions list
-
-# View system resource usage
-top -p $(pgrep -f apiban-iptables)
 ```
 
 ### Expected Log Entries
 ```
-[INFO] Downloaded 150 new IPs
-[INFO] Updated iptables with 150 new entries
-[INFO] Removed 25 expired entries
+Downloaded X new IPs
+Updated iptables with Y new entries
 ```
-
-### Performance Metrics
-Monitor these key metrics:
-- Number of blocked IPs
-- System resource usage
-- Log file size
-- Response time for SIP registration
-
-## 🔧 Troubleshooting
-Common issues and solutions:
-
-1. **APIBan not updating:**
-   ```bash
-   # Check API connectivity
-   curl -I https://api.apiban.org/v1/check
-   ```
-
-2. **High resource usage:**
-   ```bash
-   # Optimize iptables rules
-   sudo iptables-save | grep -v "sip" | sudo iptables-restore
-   ```
-
-3. **Log file growing too large:**
-   ```bash
-   # Implement log rotation
-   sudo logrotate -f /etc/logrotate.d/apiban
-   ```
-
-## ⭐ Best Practices
-1. **Regular Maintenance**
-   - Monitor log files weekly
-   - Update APIBan client monthly
-   - Review blocked IPs quarterly
-
-2. **Security Hardening**
-   - Use strong passwords
-   - Enable fail2ban
-   - Keep system updated
-   - Regular security audits
-
-3. **Backup Strategy**
-   - Backup configuration files
-   - Document custom rules
-   - Maintain IP whitelist
 
 ## 📧 Email Notifications
 Configure email alerts for:
 - Client failures
 - Missing IP blocks
 - Cron job status
-- High block rates
-- System resource alerts
-
-Example script for email alerts:
-```bash
-#!/bin/bash
-MAILTO="admin@yourdomain.com"
-THRESHOLD=1000  # Alert if blocked IPs exceed this number
-
-blocked_count=$(sudo iptables -L -n | grep "sip" | wc -l)
-if [ $blocked_count -gt $THRESHOLD ]; then
-    echo "Alert: High number of blocked IPs ($blocked_count)" | \
-    mail -s "APIBan Alert" $MAILTO
-fi
-```
 
 ## 📜 License
-Licensed under GPLv2. See [LICENSE](LICENSE) for details.
+Licensed under GPLv2.
 
 ---
 <div align="center">
 
-**Made with ❤️ by Shaheed**
+**Made with ❤️ by the VoIP Security Community**
 
-[Report Issues](https://github.com/shaheedghazi/apiban-integration/issues) | [Contribute](CONTRIBUTING.md) | [Documentation](https://apiban.org/doc)
+[Report Issues](https://github.com/yourusername/apiban-integration/issues) | [Contribute](CONTRIBUTING.md) | [Documentation](https://apiban.org/doc)
 
 </div>
