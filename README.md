@@ -1,179 +1,313 @@
-# Secure-Your-VoIP-SIP-Server-with-APIBan
-Secure your VoIP/SIP server (MagnusBilling, FreePBX, etc.) from malicious attacks with APIBan 🔐🚫
+# 🛡️ APIBan Integration Guide for VoIP/SIP Server Security
 
-**Author**: Shaheed
-Apologies for the confusion. Here's the corrected version with everything in a single code window:
+<div align="center">
 
+![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)
+![License](https://img.shields.io/badge/license-GPLv2-green.svg)
+![Platform](https://img.shields.io/badge/platform-Linux-lightgrey.svg)
 
-## Table of Contents
-- [Overview](#overview)
-- [Prerequisites](#prerequisites)
-- [Installation Guide](#installation-guide)
-  - [Install APIBan Client](#install-apiban-client)
-  - [Create Configuration File](#create-configuration-file)
-  - [Set Up Logging](#set-up-logging)
-  - [Run APIBan Manually](#run-apiban-manually)
-  - [Cron Job Setup](#cron-job-setup)
-- [Continuous Operation Verification](#continuous-operation-verification)
-- [Optional: Email Alerts](#optional-email-alerts)
-- [License](#license)
+Enhance your VoIP/SIP server security with automated threat blocking using APIBan + CrowdSec integration.
 
-## Overview
-VoIP/SIP servers, like MagnusBilling, FreePBX, and others, are prime targets for attacks due to the nature of their communication protocols. To protect your system, **APIBan** is a tool that can help mitigate these risks by downloading a regularly updated list of known malicious IPs and blocking them at the iptables level.
+**Author**: Shaheed | **Last Updated**: 2024
 
-This setup guide will walk you through installing and configuring APIBan on your server to block malicious IPs and improve your security posture.
+</div>
 
-## Prerequisites
-Before you start, ensure you have the following:
+---
 
-- A Linux-based server running VoIP/SIP software (e.g., MagnusBilling, FreePBX, etc.).
-- Root/sudo access to the server.
-- An APIBan API key, which you can obtain from the APIBan website.
-  https://www.apiban.org/getkey.html
+## 📚 Why This Guide?
+While open-source VoIP/SIP servers like FreePBX, FusionPBX, and Asterisk are powerful and widely used, comprehensive security guides for these platforms are surprisingly scarce. Most available resources either:
+- Focus only on basic security measures
+- Are outdated and don't address modern threats
+- Require expensive commercial solutions
+- Don't provide practical, step-by-step implementation details
 
-## Installation Guide
+This guide fills that gap by providing a **free, comprehensive, and practical** approach to securing your open-source VoIP infrastructure using APIBan and CrowdSec. It's especially valuable for:
+- Small to medium-sized businesses running open-source PBX systems
+- IT administrators managing VoIP infrastructure
+- Organizations looking for cost-effective security solutions
+- Anyone who has struggled to find detailed VoIP security implementation guides
 
-### Install APIBan Client
-1. **Download the APIBan iptables client**:
-   ```bash
-   wget https://github.com/apiban/apiban-client-go/releases/download/v1.0.0/apiban-iptables-client
-   ```
+## 📚 Table of Contents
+- [Overview](#-overview)
+- [Key Features](#-key-features)
+- [Prerequisites](#-prerequisites)
+- [Installation Steps](#-installation-steps)
+  - [Install APIBan Client](#1-install-apiban-client)
+  - [Configure APIBan](#2-configure-apiban)
+  - [Set Up Logging](#3-set-up-logging)
+  - [Test the Installation](#4-test-the-installation)
+  - [Automate with Cron](#5-automate-with-cron)
+- [Enhanced Security with CrowdSec](#-enhanced-security-with-crowdsec)
+- [Monitoring and Maintenance](#-monitoring-and-maintenance)
+- [Troubleshooting](#-troubleshooting)
+- [Best Practices](#-best-practices)
+- [License](#-license)
 
-2. **Make it executable**:
-   ```bash
-   chmod +x apiban-iptables-client
-   ```
+## 🔍 Overview
+VoIP/SIP servers are prime targets for various cyber attacks, including:
+- Toll fraud attempts
+- DDoS attacks
+- Brute force password attempts
+- Registration hijacking
+- Call interception attempts
 
-3. **Move the client to a system path**:
-   ```bash
-   sudo mv apiban-iptables-client /usr/local/bin/apiban-iptables
-   ```
+Despite the critical nature of these threats, the open-source VoIP/SIP community has lacked comprehensive security tools and documentation. Commercial solutions exist but are often expensive and closed-source, leaving many deployments vulnerable. This is particularly concerning given that a compromised VoIP system can lead to:
+- Substantial financial losses through toll fraud
+- Service disruption affecting business operations
+- Data breaches compromising call privacy
+- Damage to business reputation
+- Legal and compliance issues
 
-### Create Configuration File
-1. **Create the configuration directory**:
-   ```bash
-   sudo mkdir -p /etc/apiban
-   ```
+APIBan helps mitigate these risks by maintaining a dynamic blocklist of known malicious IPs and implementing them at the iptables level. When combined with CrowdSec, it creates a robust security perimeter for your VoIP infrastructure. This open-source solution provides enterprise-grade protection without the enterprise-grade price tag.
 
-2. **Create the JSON configuration file**:
-   ```bash
-   sudo nano /etc/apiban/apiban-iptables.conf
-   ```
+## 🌟 Key Features
+- **Real-time Protection**: Automatically blocks known malicious IPs
+- **Community-driven**: Benefits from collective threat intelligence
+- **Low Resource Usage**: Minimal impact on system performance
+- **Easy Integration**: Works with popular VoIP platforms
+- **Automated Updates**: Regular updates to threat database
+- **CrowdSec Integration**: Enhanced threat detection and sharing
 
-3. **Add the following content (replace the API key with your own)**:
+## 🔧 Prerequisites
+- Linux-based VoIP/SIP server (MagnusBilling, FreePBX, etc.)
+- Root/sudo access
+- APIBan API key ([Get your key here](https://www.apiban.org/getkey.html))
+- iptables installed and configured
+- Minimum system requirements:
+  - RAM: 512MB (1GB recommended)
+  - CPU: 1 core
+  - Storage: 100MB free space
 
+## 📥 Installation Steps
+
+### 1. Install APIBan Client
+```bash
+# Download the latest APIBan client
+wget https://github.com/apiban/apiban-client-go/releases/download/v1.0.0/apiban-iptables-client
+
+# Make executable and move to system path
+chmod +x apiban-iptables-client
+sudo mv apiban-iptables-client /usr/local/bin/apiban-iptables
+
+# Verify installation
+apiban-iptables --version
+```
+
+### 2. Configure APIBan
+```bash
+# Create configuration directory
+sudo mkdir -p /etc/apiban
+
+# Create and edit configuration file
+sudo nano /etc/apiban/apiban-iptables.conf
+```
+
+Add the following configuration:
 ```json
 {
     "apikey": "YOUR_API_KEY",  // Replace with your actual API key from APIBan
-    "lkid": "100",             // The list ID provided by APIBan, adjust based on your needs
-    "version": "1.0",          // API version (leave as is if using APIBan v1.0)
-    "set": "sip",              // The type of IP set to be used for blocking, e.g., "sip"
-    "flush": "200"             // Number of IPs to flush or remove (adjust as needed)
+    "lkid": "100",             // List ID for tracking last known blocked IPs
+    "version": "1.0",          // API version (current stable)
+    "set": "sip",              // IP set name for iptables
+    "flush": "200",            // Number of IPs to remove in each flush operation
+    "debug": false,            // Enable for troubleshooting
+    "ipv6": false             // Enable for IPv6 support
 }
 ```
 
+### 3. Set Up Logging
+```bash
+# Create log file with appropriate permissions
+sudo touch /var/log/apiban-client.log
+sudo chmod 644 /var/log/apiban-client.log
 
-
-### Set Up Logging
-1. **Ensure the log file exists and is writable**:
-   ```bash
-   sudo touch /var/log/apiban-client.log
-   sudo chmod 644 /var/log/apiban-client.log
-   ```
-
-### Run APIBan Manually
-1. **Test the client**:
-   ```bash
-   apiban-iptables --config /etc/apiban/apiban-iptables.conf
-   ```
-
-2. **Check the log file to ensure no errors**:
-   ```bash
-   tail -f /var/log/apiban-client.log
-   ```
-
-3. **Verify iptables rules**:
-   ```bash
-   sudo iptables -L -n
-   ```
-
-   This should show entries for blocked IP addresses.
-
-### Cron Job Setup
-To ensure that APIBan runs periodically, follow these steps to set up a cron job:
-
-1. **Edit the crontab for the root user**:
-   ```bash
-   sudo crontab -e
-   ```
-
-2. **Add the following line to run APIBan every 5 minutes**:
-   ```bash
-   */5 * * * * /usr/local/bin/apiban-iptables --config /etc/apiban/apiban-iptables.conf >> /var/log/apiban-client.log 2>&1
-   ```
-
-3. **Save and exit the crontab editor**.
-
-This will ensure that APIBan runs every 5 minutes, updating the iptables rules with new malicious IPs.
-
-## Continuous Operation Verification
-Once the system is set up, follow these steps to ensure continuous protection:
-
-1. **Check iptables rules periodically**:
-   ```bash
-   sudo iptables -L -n
-   ```
-
-2. **Monitor the log file for updates**:
-   ```bash
-   tail -f /var/log/apiban-client.log
-   ```
-
-   Look for log entries like:
-   ```
-   Downloaded X new IPs
-   Updated iptables with Y new entries
-   ```
-## Extra security
+# Optional: Configure log rotation
+sudo tee /etc/logrotate.d/apiban << EOF
+/var/log/apiban-client.log {
+    weekly
+    rotate 4
+    compress
+    missingok
+    notifempty
+}
+EOF
 ```
+
+### 4. Test the Installation
+```bash
+# Run APIBan manually
+apiban-iptables --config /etc/apiban/apiban-iptables.conf
+
+# Check logs
+tail -f /var/log/apiban-client.log
+
+# Verify iptables rules
+sudo iptables -L -n | grep "sip"
+```
+
+### 5. Automate with Cron
+Add to root's crontab (`sudo crontab -e`):
+```bash
+# Update APIBan blocklist every 5 minutes
+*/5 * * * * /usr/local/bin/apiban-iptables --config /etc/apiban/apiban-iptables.conf >> /var/log/apiban-client.log 2>&1
+
+# Optional: Daily cleanup of old blocks (adjust retention period as needed)
+0 0 * * * /usr/local/bin/apiban-iptables --flush >> /var/log/apiban-client.log 2>&1
+```
+
+## 🛡️ Enhanced Security with CrowdSec
+Create a script to sync blocked IPs with CrowdSec:
+
+```bash
 #!/bin/bash
 
-# Define the CrowdSec CLI login (use the correct user or system privileges)
-LOGIN="924bf6c65e6085bCrowdSeclogin "  # Replace with your CrowdSec login (if necessary)
-PASSWORD="password/API ke"  # Replace with your password/API key from the credentials file
+# Configuration
+CROWDSEC_LOGIN="your_crowdsec_login"
+CROWDSEC_KEY="your_crowdsec_api_key"
+LOG_FILE="/var/log/apiban-crowdsec.log"
+BLOCK_DURATION="24h"  # Adjust block duration as needed
 
-# Fetch IPs from iptables that were blocked with 'reject-with icmp-port-unreachable'
+# Logging function
+log() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOG_FILE"
+}
+
+# Get blocked IPs from iptables
+log "Starting APIBan to CrowdSec sync"
 blocked_ips=$(sudo iptables -L -n -v | grep 'reject-with icmp-port-unreachable' | awk '{print $8}' | sort -u)
 
-# Check if any IPs were found
+# Exit if no IPs found
 if [ -z "$blocked_ips" ]; then
-  echo "No blocked IPs found."
-  exit 1
+    log "No blocked IPs found"
+    exit 1
 fi
 
-# Loop through each blocked IP and add it to CrowdSec's decision list
+# Add IPs to CrowdSec
 for ip in $blocked_ips; do
-  # Skip invalid IPs (e.g., 0.0.0.0, 255.255.255.255)
-  if [[ "$ip" == "0.0.0.0" || "$ip" == "255.255.255.255" ]]; then
-    echo "Skipping invalid IP: $ip"
-    continue
-  fi
-
-  echo "Blocking IP: $ip"
-
-  # Call CrowdSec CLI to add the IP to the decision list (ban for 1 hour)
-  sudo cscli decisions add --ip "$ip" --duration 1h --reason "Blocked by iptables (APIBan)"
-
-  if [ $? -eq 0 ]; then
-    echo "Successfully added IP $ip to CrowdSec decision list."
-  else
-    echo "Failed to add IP $ip to CrowdSec decision list."
-  fi
+    # Skip invalid IPs
+    if [[ "$ip" =~ ^(0\.0\.0\.0|255\.255\.255\.255)$ ]]; then
+        log "Skipping invalid IP: $ip"
+        continue
+    fi
+    
+    log "Processing IP: $ip"
+    if sudo cscli decisions add --ip "$ip" --duration "$BLOCK_DURATION" --reason "APIBan Block" > /dev/null 2>&1; then
+        log "Successfully blocked IP: $ip"
+    else
+        log "Failed to block IP: $ip"
+    fi
 done
 
+log "Sync completed"
 ```
-## Optional: Email Alerts
-To be notified of issues such as client failures or missing IP blocks, consider setting up email alerts based on log file monitoring or the cron job status.
 
-## License
-This project is licensed under the **GPLv2** License.
+Save as `/usr/local/bin/apiban2crowdsec.sh` and configure:
+```bash
+# Make executable
+sudo chmod +x /usr/local/bin/apiban2crowdsec.sh
+
+# Add to crontab (runs every 15 minutes)
+*/15 * * * * /usr/local/bin/apiban2crowdsec.sh
+```
+
+## 📊 Monitoring and Maintenance
+
+### System Status Checks
+```bash
+# View current blocks
+sudo iptables -L -n
+
+# Monitor logs
+tail -f /var/log/apiban-client.log
+
+# Check CrowdSec decisions
+sudo cscli decisions list
+
+# View system resource usage
+top -p $(pgrep -f apiban-iptables)
+```
+
+### Expected Log Entries
+```
+[INFO] Downloaded 150 new IPs
+[INFO] Updated iptables with 150 new entries
+[INFO] Removed 25 expired entries
+```
+
+### Performance Metrics
+Monitor these key metrics:
+- Number of blocked IPs
+- System resource usage
+- Log file size
+- Response time for SIP registration
+
+## 🔧 Troubleshooting
+Common issues and solutions:
+
+1. **APIBan not updating:**
+   ```bash
+   # Check API connectivity
+   curl -I https://api.apiban.org/v1/check
+   ```
+
+2. **High resource usage:**
+   ```bash
+   # Optimize iptables rules
+   sudo iptables-save | grep -v "sip" | sudo iptables-restore
+   ```
+
+3. **Log file growing too large:**
+   ```bash
+   # Implement log rotation
+   sudo logrotate -f /etc/logrotate.d/apiban
+   ```
+
+## ⭐ Best Practices
+1. **Regular Maintenance**
+   - Monitor log files weekly
+   - Update APIBan client monthly
+   - Review blocked IPs quarterly
+
+2. **Security Hardening**
+   - Use strong passwords
+   - Enable fail2ban
+   - Keep system updated
+   - Regular security audits
+
+3. **Backup Strategy**
+   - Backup configuration files
+   - Document custom rules
+   - Maintain IP whitelist
+
+## 📧 Email Notifications
+Configure email alerts for:
+- Client failures
+- Missing IP blocks
+- Cron job status
+- High block rates
+- System resource alerts
+
+Example script for email alerts:
+```bash
+#!/bin/bash
+MAILTO="admin@yourdomain.com"
+THRESHOLD=1000  # Alert if blocked IPs exceed this number
+
+blocked_count=$(sudo iptables -L -n | grep "sip" | wc -l)
+if [ $blocked_count -gt $THRESHOLD ]; then
+    echo "Alert: High number of blocked IPs ($blocked_count)" | \
+    mail -s "APIBan Alert" $MAILTO
+fi
+```
+
+## 📜 License
+Licensed under GPLv2. See [LICENSE](LICENSE) for details.
+
+---
+<div align="center">
+
+**Made with ❤️ by the VoIP Security Community**
+
+[Report Issues](https://github.com/yourusername/apiban-integration/issues) | [Contribute](CONTRIBUTING.md) | [Documentation](https://apiban.org/doc)
+
+</div>
