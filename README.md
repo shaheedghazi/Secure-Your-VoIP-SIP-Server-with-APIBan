@@ -139,8 +139,8 @@ Once the system is set up, follow these steps to ensure continuous protection:
 #!/bin/bash
 
 # Define the CrowdSec CLI login (use the correct user or system privileges)
-LOGIN="924bf6c65e6085b2626a6d1c67782651vxHJat0uAA73LQlL"  # Replace with your CrowdSec login (if necessary)
-PASSWORD="GjBwgiFGPFmovBaRAxL947DJNqSEkD4tePPpqlySYrfpfe1Aqf1hyoClR0eQbtnS"  # Replace with your password/API key from the credentials file
+LOGIN="924bf6c65e6085bCrowdSeclogin "  # Replace with your CrowdSec login (if necessary)
+PASSWORD="password/API ke"  # Replace with your password/API key from the credentials file
 
 # Fetch IPs from iptables that were blocked with 'reject-with icmp-port-unreachable'
 blocked_ips=$(sudo iptables -L -n -v | grep 'reject-with icmp-port-unreachable' | awk '{print $8}' | sort -u)
