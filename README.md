@@ -131,11 +131,11 @@ cat /etc/crowdsec/local_api_credentials.yaml
 #!/bin/bash
 
 # Define the CrowdSec CLI login (use the correct user or system privileges)
-LOGIN="924bf6c65e6085bCrowdSeclogin "  # Replace with your CrowdSec login (if necessary)
-PASSWORD="password/API ke"  # Replace with your password/API key from the credentials file
+LOGIN="2222"  # Replace with your CrowdSec login (if necess>
+PASSWORD="2222"  # Replace with your passwo>
 
 # Fetch IPs from iptables that were blocked with 'reject-with icmp-port-unreachable'
-blocked_ips=$(sudo iptables -L -n -v | grep 'reject-with icmp-port-unreachable' | awk '{print $8}' | sort -u)
+blocked_ips=$(sudo iptables -L -n -v | grep 'reject-with icmp-port-unreachable' | awk '{print $8}' | so>
 
 # Check if any IPs were found
 if [ -z "$blocked_ips" ]; then
