@@ -306,8 +306,8 @@ Licensed under GPLv2. See [LICENSE](LICENSE) for details.
 ---
 <div align="center">
 
-**Made with ❤️ by the VoIP Security Community**
+**Made with ❤️ by Shaheed**
 
-[Report Issues](https://github.com/yourusername/apiban-integration/issues) | [Contribute](CONTRIBUTING.md) | [Documentation](https://apiban.org/doc)
+[Report Issues](https://github.com/shaheedghazi/apiban-integration/issues) | [Contribute](CONTRIBUTING.md) | [Documentation](https://apiban.org/doc)
 
 </div>
