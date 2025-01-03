@@ -122,8 +122,7 @@ Add to root's crontab (`sudo crontab -e`):
 ```
 
 ## 🛡️ Enhanced Security with CrowdSec
-Create a script to sync blocked IPs with CrowdSec:
-
+Create a script to sync blocked IPs with CrowdSec (`nano api2crowdsec.sh`):
 ```bash
 #!/bin/bash
 
