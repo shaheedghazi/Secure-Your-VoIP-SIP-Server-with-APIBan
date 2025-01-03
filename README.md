@@ -2,6 +2,8 @@
 Secure your VoIP/SIP server (MagnusBilling, FreePBX, etc.) from malicious attacks with APIBan 🔐🚫
 
 **Author**: Shaheed
+Apologies for the confusion. Here's the corrected version with everything in a single code window:
+
 
 ## Table of Contents
 - [Overview](#overview)
@@ -11,7 +13,7 @@ Secure your VoIP/SIP server (MagnusBilling, FreePBX, etc.) from malicious attack
   - [Create Configuration File](#create-configuration-file)
   - [Set Up Logging](#set-up-logging)
   - [Run APIBan Manually](#run-apiban-manually)
-  - [Systemd Service Setup](#systemd-service-setup)
+  - [Cron Job Setup](#cron-job-setup)
 - [Continuous Operation Verification](#continuous-operation-verification)
 - [Optional: Email Alerts](#optional-email-alerts)
 - [License](#license)
@@ -59,15 +61,18 @@ Before you start, ensure you have the following:
    ```
 
 3. **Add the following content (replace the API key with your own)**:
-   ```json
-  {
-  	"apikey":"MY API KEY",
-  	"lkid":"100",
-  	"version":"1.0",
-  	"set":"sip",
-  	"flush":"200"
-  }
-   ```
+
+```json
+{
+    "apikey": "YOUR_API_KEY",  // Replace with your actual API key from APIBan
+    "lkid": "100",             // The list ID provided by APIBan, adjust based on your needs
+    "version": "1.0",          // API version (leave as is if using APIBan v1.0)
+    "set": "sip",              // The type of IP set to be used for blocking, e.g., "sip"
+    "flush": "200"             // Number of IPs to flush or remove (adjust as needed)
+}
+```
+
+
 
 ### Set Up Logging
 1. **Ensure the log file exists and is writable**:
@@ -94,34 +99,22 @@ Before you start, ensure you have the following:
 
    This should show entries for blocked IP addresses.
 
-### Systemd Service Setup
-To ensure that APIBan runs automatically on startup and keeps blocking malicious IPs:
+### Cron Job Setup
+To ensure that APIBan runs periodically, follow these steps to set up a cron job:
 
-1. **Create a systemd service file**:
+1. **Edit the crontab for the root user**:
    ```bash
-   sudo nano /etc/systemd/system/apiban-iptables.service
+   sudo crontab -e
    ```
 
-2. **Add the following content**:
-   ```ini
-   [Unit]
-   Description=APIBan iptables Client
-   After=network.target
-
-   [Service]
-   ExecStart=/usr/local/bin/apiban-iptables --config /etc/apiban/apiban-iptables.conf
-   Restart=always
-   RestartSec=5s
-
-   [Install]
-   WantedBy=multi-user.target
-   ```
-
-3. **Enable and start the service**:
+2. **Add the following line to run APIBan every 5 minutes**:
    ```bash
-   sudo systemctl enable apiban-iptables
-   sudo systemctl start apiban-iptables
+   */5 * * * * /usr/local/bin/apiban-iptables --config /etc/apiban/apiban-iptables.conf >> /var/log/apiban-client.log 2>&1
    ```
+
+3. **Save and exit the crontab editor**.
+
+This will ensure that APIBan runs every 5 minutes, updating the iptables rules with new malicious IPs.
 
 ## Continuous Operation Verification
 Once the system is set up, follow these steps to ensure continuous protection:
@@ -143,7 +136,7 @@ Once the system is set up, follow these steps to ensure continuous protection:
    ```
 
 ## Optional: Email Alerts
-To be notified of issues such as client failures or missing IP blocks, consider setting up email alerts based on log file monitoring or the service status.
+To be notified of issues such as client failures or missing IP blocks, consider setting up email alerts based on log file monitoring or the cron job status.
 
 ## License
 This project is licensed under the **GPLv2** License.
