@@ -60,12 +60,13 @@ Before you start, ensure you have the following:
 
 3. **Add the following content (replace the API key with your own)**:
    ```json
-   {
-     "apikey": "YOUR_API_KEY_HERE",
-     "logfile": "/var/log/apiban-client.log",
-     "target": "REJECT",
-     "verify": true
-   }
+  {
+  	"apikey":"MY API KEY",
+  	"lkid":"100",
+  	"version":"1.0",
+  	"set":"sip",
+  	"flush":"200"
+  }
    ```
 
 ### Set Up Logging
